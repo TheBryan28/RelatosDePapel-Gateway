@@ -44,7 +44,7 @@ spring:
 management:
   endpoint:
     gateway:
-      access: ${ROUTE_TABLES_ENABLED:read_only}
+      access: ${ROUTE_TABLES_ENABLED:READ_ONLY}
   endpoints:
     web:
       exposure:
