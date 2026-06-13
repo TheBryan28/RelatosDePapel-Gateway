@@ -50,3 +50,7 @@ management:
       exposure:
         include:
           - '*'
+
+microservices:
+  users:
+    url: ${USERS_URL:lb://users/api/v1}

@@ -52,7 +52,7 @@ public class PutRequestDecorator  extends ServerHttpRequestDecorator {
     @Override
     @NonNull
     public URI getURI() {
-        return UriComponentsBuilder.fromUri((URI) gatewayRequest.getExchange().getAttributes().get(ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR)).build().toUri();
+        return gatewayRequest.GetURI();
     }
 
     /**
