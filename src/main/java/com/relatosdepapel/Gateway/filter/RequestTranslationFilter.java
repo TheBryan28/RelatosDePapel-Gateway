@@ -5,9 +5,11 @@ import com.relatosdepapel.Gateway.model.GatewayRequest;
 import com.relatosdepapel.Gateway.utils.RequestBodyExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,7 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class RequestTranslationFilter implements GlobalFilter {
+public class RequestTranslationFilter implements GlobalFilter, Ordered {
 
     private final RequestBodyExtractor requestBodyExtractor;
     private final RequestDecoratorFactory requestDecoratorFactory;
@@ -44,7 +46,7 @@ public class RequestTranslationFilter implements GlobalFilter {
     @Override
     public Mono<Void> filter(
             ServerWebExchange exchange,
-            GatewayFilterChain chain) {
+            @NonNull GatewayFilterChain chain) {
 
         // By default, set the response status to 400. This will be overridden if the request is valid.
         exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
@@ -59,6 +61,7 @@ public class RequestTranslationFilter implements GlobalFilter {
                         GatewayRequest request = requestBodyExtractor.getRequest(exchange, dataBuffer);
                         ServerHttpRequest mutatedRequest = requestDecoratorFactory.getDecorator(request);
                         //RouteToRequestUrlFilter writes the URI to the exchange attributes *before* any global filters run.
+                        System.out.println(mutatedRequest.getURI());
                         exchange.getAttributes().put(ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR, mutatedRequest.getURI());
                         if(request.getQueryParams() != null) {
                             request.getQueryParams().clear();
@@ -67,5 +70,10 @@ public class RequestTranslationFilter implements GlobalFilter {
                         return chain.filter(exchange.mutate().request(mutatedRequest).build());
                     });
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return -200; // Ejecutar antes que el filtro de authentication
     }
 }
