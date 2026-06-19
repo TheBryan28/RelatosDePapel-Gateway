@@ -79,10 +79,10 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private boolean isPublicEndpoint(String path, ServerHttpRequest request) {
         // Permitir solo POST a tokens (para login) - GET no debe permitirse
         // permitir post para users (registro)
-        return (path.matches(".*/(users/)?api/v1/token/?$") && "POST".equals(request.getMethod().name()))
-                || (path.matches(".*/(users/)?api/v1/users*") && "POST".equals(request.getMethod().name()))
-                || path.matches(".*/(catalog/)?api/.*")
-                || path.matches(".*(communications/)?ws-api/.*");
+        return (path.matches(".*/users/?api/v1/token/?$") && "POST".equals(request.getMethod().name()))
+                || (path.matches(".*/users/?api/v1/users*") && "POST".equals(request.getMethod().name()))
+                || path.matches(".*/catalog/?api/.*")
+                || path.matches(".*communications/?ws-api/.*");
     }
 
     private Mono<Void> respondWithError(ServerWebExchange exchange, HttpStatus status, String message) {
