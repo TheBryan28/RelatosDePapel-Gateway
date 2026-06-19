@@ -48,12 +48,17 @@ public class RequestTranslationFilter implements GlobalFilter, Ordered {
             ServerWebExchange exchange,
             @NonNull GatewayFilterChain chain) {
 
-        // By default, set the response status to 400. This will be overridden if the request is valid.
-        exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+        // Bypasar peticiones WebSocket (handshake GET)
+        String path = exchange.getRequest().getURI().getPath();
+        if (path.contains("ws-api") || "websocket".equalsIgnoreCase(exchange.getRequest().getHeaders().getUpgrade())) {
+            log.info("Bypassing translation filter for WebSocket request: {}", path);
+            return chain.filter(exchange);
+        }
 
         // Simple check to see if the request has a content type and is a POST request
         if (exchange.getRequest().getHeaders().getContentType() == null || !exchange.getRequest().getMethod().equals(HttpMethod.POST)) {
             log.info("Request does not have a content type or is not a POST request");
+            exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST); // Asignar 400 solo al rechazar
             return exchange.getResponse().setComplete();
         } else {
             return DataBufferUtils.join(exchange.getRequest().getBody())
