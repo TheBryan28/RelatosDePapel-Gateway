@@ -4,8 +4,8 @@ server:
 ## Classic Eureka configuration
 eureka:
   instance:
-    preferIpAddress: true
-    hostname: ${HOSTNAME:localhost}
+    preferIpAddress: false
+    hostname: ${RAILWAY_PRIVATE_DOMAIN:localhost}
 
   client:
     registerWithEureka: true
