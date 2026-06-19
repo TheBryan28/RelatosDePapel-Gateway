@@ -61,7 +61,6 @@ public class RequestTranslationFilter implements GlobalFilter, Ordered {
                         GatewayRequest request = requestBodyExtractor.getRequest(exchange, dataBuffer);
                         ServerHttpRequest mutatedRequest = requestDecoratorFactory.getDecorator(request);
                         //RouteToRequestUrlFilter writes the URI to the exchange attributes *before* any global filters run.
-                        System.out.println(mutatedRequest.getURI());
                         exchange.getAttributes().put(ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR, mutatedRequest.getURI());
                         if(request.getQueryParams() != null) {
                             request.getQueryParams().clear();

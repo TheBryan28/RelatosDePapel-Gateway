@@ -7,6 +7,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -14,6 +15,8 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -34,15 +37,11 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Verificar presencia del header Authorization
-        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("Access Denied - missing or invalid Authorization header");
-            return respondWithError(exchange, HttpStatus.FORBIDDEN, "Authorization header missing or invalid");
+        String sessionId = extractToken(request);
+        if (sessionId == null || sessionId.isEmpty()) {
+            log.warn("Access Denied - missing or invalid Authorization header or sessionId Cookie");
+            return respondWithError(exchange, HttpStatus.FORBIDDEN, "Authorization header or sessionId Cookie missing or invalid ");
         }
-
-        // Extraer sessionId del header
-        String sessionId = authHeader.substring(7); // Eliminar "Bearer "
 
         // Validar token de forma simple - solo 200 o 401
         return authService.validateToken(sessionId)
@@ -61,11 +60,27 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 });
     }
 
+    private String extractToken(ServerHttpRequest request) {
+        // primero intenta cookie
+        List<HttpCookie> cookies = request.getCookies().get("sessionId");
+        if (cookies != null && !cookies.isEmpty()) {
+            return cookies.getFirst().getValue();
+        }
+
+        // fallback a Bearer header (útil para Postman/mobile)
+        String header = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+
+        return null;
+    }
+
     private boolean isPublicEndpoint(String path, ServerHttpRequest request) {
         // Permitir solo POST a tokens (para login) - GET no debe permitirse
         // permitir post para users (registro)
         return (path.matches(".*/users/api/v1/token/?$") && "POST".equals(request.getMethod().name()))
-                || (path.matches(".*/users/api/v1/users*") && "POST".equals(request.getMethod().name()))
+                || (path.matches(".*/users/api/v1/users") && "POST".equals(request.getMethod().name()))
                 || path.matches(".*/catalog/api/.*")
                 || path.matches(".*communications/ws-api/.*");
     }
